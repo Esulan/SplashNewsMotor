@@ -43,6 +43,7 @@ void loop() {
     if(inBytes[0] == 'E'){
       if(inBytes[1] == 3){
         digitalWrite(10, inBytes[2]);
+        delay(1000);
       }
     }
 

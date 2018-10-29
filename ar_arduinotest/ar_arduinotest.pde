@@ -1,24 +1,23 @@
 import processing.serial.*;
 import processing.net.*;
 
+
 Server server;
 Serial serialPort; 
-
 boolean firstContact = false;  
 
 byte[] inByte = new byte[3]; 
+String[] xp;
 
+int x;
 int oval1;
 int oval2;
 int oval3;
 
-String serverAddress = "localhost";
-Client client;
-
 void setup() {
   size(200, 200);
   
-  client = new Client(this, serverAddress, 5555);
+  server = new Server(this, 12345);
   
   println(Serial.list()); 
   String portName = Serial.list()[0]; 
@@ -36,6 +35,57 @@ void draw() {
   text("Output port 1: " + oval1, 10, 100);
   text("Output port 2: " + oval2, 10, 130);
   text("Output port 3: " + oval3, 10, 160);
+  
+  Client client = server.available();
+
+  if (client!=null) {
+    // println("Client IP Address : " + client.ip());
+    if(client.available() > 0){
+      String clientData = client.readString();
+      
+      // println(clientData + "\n");
+
+      String[] httpRequest=trim(split(clientData,'\n'));
+      String http[];
+      // GET /3 HTTP/1.1
+      
+      for(int i = 0; i < httpRequest.length; i++){
+        if(httpRequest[i].contains("GET")){
+         
+          http = trim(split(httpRequest[i], " HTTP/1.1"));
+          println(httpRequest[i]);
+          String[] list = split(httpRequest[i], " HTTP/1.1");
+          //println(list[0]);
+          String[] list2 = split(list[0], " /?");
+          
+          println(int(list2[1]));
+          x = int(list2[1]) - 600;
+          
+        }
+      }
+      int xoff = abs(x - 600);
+      
+      if(xoff <= 200){
+        
+        sendServo(1, 0);
+        delay(2000);
+        sendServo(1, 90);
+      } else if(x > 200){
+        println("left");
+        
+        sendServo2(2, x / 10);
+        delay(500);
+        sendServo2(2, 0);
+      } else if(x < -200){   
+        println("right");
+        sendServo3(3, x / 10);
+        delay(500);
+        sendServo3(3, 0);
+      }
+      
+      client.stop();
+    } 
+  }
 }
 
 void serialEvent(Serial port) {
@@ -86,19 +136,6 @@ void sendServo3(int id, int value)
   serialPort.write((byte)v);
 }
 
-void clientEvent(Client c) {
-  String s = c.readStringUntil('\n');
-  if (s != null) {
-    print("received from server: " + s);
-    String[] data = s.trim().split(",");
-    for(int i = 0; i < data.length; i++){
-      if(data[i] == "1");
-      int x = parseInt(data[0]);
-      int y = parseInt(data[1]);
-    }
-  }
-}
-
 void keyPressed() {
   switch(key){
     case 'z':
@@ -126,7 +163,7 @@ void keyPressed() {
     break;
     
   case 'f':
-    oval2 = 255;
+    oval2 = 200;
     sendServo2(2, oval2);
     break;
   
@@ -136,7 +173,7 @@ void keyPressed() {
     break;
     
   case 'r':
-    oval3 = 255;
+    oval3 = 200;
     sendServo3(3, oval3);
     break;
    
